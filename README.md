@@ -1,85 +1,68 @@
-# DIO Spring Boot - Final Project 05: Spring AI (budgeting)
+o projeto pega a voz do usuario, traduz para texto e gurda suas dispesas;
 
-## Introduction
+foi implementado sistemas de filtragem para pesquisa (mensal, categoria e total), em base nos dados guardados;
 
-This final module applies Spring AI in a budgeting API while preserving the same layered architecture used across the track.
+foi utilizado:
+Java 25 · Spring Boot 4.0.5
+Spring AI 2.0.0-M4 — ChatClient, @Tool/@ToolParam, TranscriptionModel, TextToSpeechModel
+OpenAI — gpt-4o-mini (chat), whisper-1 (transcrição), gpt-4o-mini-tts (voz)
+Spring Data JPA + MySQL 9.6 (Docker Compose)
+Lombok, Gradle, JUnit 5 + AssertJ
 
-The goal is to integrate AI capabilities without bypassing domain and use case boundaries.
+sendo que eu aprendi a nao confiar em IAs para estudar, ja que quanto mais eu pedia, mais ela me dava a resposta em vez de me ensinar.
 
-## Code Context
 
-The project processes voice commands to create and query financial transactions.
+testes:
+- build
+PS> ./gradlew build -x test
+BUILD SUCCESSFUL
 
-Primary flow:
+- consulta por categoria
+GET /transactions/reports/total/GROCERIES
+{
+    "category":  "GROCERIES",
+    "totalValue":  40.9,
+    "transactionsCount":  2
+}
 
-1. Client uploads an audio file.
-2. Audio is transcribed into text.
-3. The model selects an application tool/use case.
-4. The use case persists or queries transaction data.
-5. The final response is converted to audio.
+- consulta toatal
+GET /transactions/reports/total
+{
+    "totalValue":  170.4,
+    "transactionsCount":  4
+}
 
-## Project Structure
+- resumo mensal
+GET /transactions/reports/monthly/2026-11
+{
+    "period":  "2026-11",
+    "totalValue":  130.4,
+    "transactionsCount":  3,
+    "byCategory":  [
+        { "category": "PHARMA",    "totalValue": 89.5, "transactionsCount": 1 },
+        { "category": "GROCERIES", "totalValue": 40.9, "transactionsCount": 2 }
+    ]
+}
 
-- `src/main/java/dio/budgeting/domain`
-  - Domain model and repository contract.
-- `src/main/java/dio/budgeting/application`
-  - Use cases used by both REST and AI tool calling.
-- `src/main/java/dio/budgeting/infrastructure`
-  - HTTP adapters, JPA adapters, and integration glue.
+GET /transactions/reports/monthly/2026-10
+{
+    "period":  "2026-10",
+    "totalValue":  40.0,
+    "transactionsCount":  1,
+    "byCategory":  [
+        { "category": "AUTO", "totalValue": 40.0, "transactionsCount": 1 }
+    ]
+}
 
-## Module-Specific Topics
+- Listagem por categoria (bug dos centavos corrigido: 25.9, não 2590.0)
+GET /transactions/GROCERIES
+[
+    { "id": "4275e7c7-...", "category": "GROCERIES", "description": "mercado",
+      "amount": 25.9, "occurredAt": "2026-11-10" },
+    { "id": "e089c08e-...", "category": "GROCERIES", "description": "padaria",
+      "amount": 15.0, "occurredAt": "2026-11-11" }
+]
 
-### Speech-to-text
-
-- Uses `TranscriptionModel` for audio transcription.
-- Model settings are configured in `application.properties`.
-
-### Tool calling
-
-- `ChatClient` registers use-case tools.
-- `@Tool` methods expose business capabilities to the model.
-
-### Text-to-speech
-
-- `TextToSpeechModel` produces MP3 output from final text.
-- AI endpoint returns generated audio.
-
-## Spring AI Documentation
-
-- Spring AI Reference: https://docs.spring.io/spring-ai/reference/index.html
-- ChatModel API: https://docs.spring.io/spring-ai/reference/api/chatmodel.html
-- ChatClient API: https://docs.spring.io/spring-ai/reference/api/chatclient.html
-- Tools API: https://docs.spring.io/spring-ai/reference/api/tools.html
-- Audio Transcriptions API: https://docs.spring.io/spring-ai/reference/api/audio/transcriptions.html
-- Audio Speech API: https://docs.spring.io/spring-ai/reference/api/audio/speech.html
-
-## Shared Architecture References
-
-Common architecture concepts are documented in the root README:
-
-- [DDD layers](../README.md#ddd-layered-architecture)
-- [Class vs record](../README.md#java-class-vs-java-record-in-domain-modeling)
-- [Strong typed identifiers](../README.md#strong-typed-identifiers)
-- [Repository pattern](../README.md#repository-pattern)
-- [Use cases and Clean Architecture](../README.md#use-cases-and-clean-architecture)
-- [Docker Compose support](../README.md#docker-compose-support-in-development)
-
-## How to Run
-
-Set your OpenAI API key:
-
-```bash
-export OPENAI_API_KEY="your_api_key_here"
-```
-
-Run the application and tests:
-
-```bash
-./gradlew bootRun
-./gradlew test
-```
-
-## Notes
-
-- Educational final project focused on AI plus architectural discipline.
-- External provider integration tests may require active credentials.
+- teste de erro
+GET /transactions/reports/total/PIZZA       -> 400  "Categorias válidas: [GROCERIES, PHARMA, AUTO]"
+GET /transactions/reports/monthly/novembro  -> 400  "Use o formato AAAA-MM (ex.: 2026-11)"
