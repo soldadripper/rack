@@ -14,10 +14,12 @@ sendo que eu aprendi a nao confiar em IAs para estudar, ja que quanto mais eu pe
 
 testes:
 - build
+  
 PS> ./gradlew build -x test
 BUILD SUCCESSFUL
 
 - consulta por categoria
+  
 GET /transactions/reports/total/GROCERIES
 {
     "category":  "GROCERIES",
@@ -26,6 +28,7 @@ GET /transactions/reports/total/GROCERIES
 }
 
 - consulta toatal
+  
 GET /transactions/reports/total
 {
     "totalValue":  170.4,
@@ -33,6 +36,7 @@ GET /transactions/reports/total
 }
 
 - resumo mensal
+  
 GET /transactions/reports/monthly/2026-11
 {
     "period":  "2026-11",
@@ -55,6 +59,7 @@ GET /transactions/reports/monthly/2026-10
 }
 
 - Listagem por categoria (bug dos centavos corrigido: 25.9, não 2590.0)
+  
 GET /transactions/GROCERIES
 [
     { "id": "4275e7c7-...", "category": "GROCERIES", "description": "mercado",
@@ -64,5 +69,6 @@ GET /transactions/GROCERIES
 ]
 
 - teste de erro
+  
 GET /transactions/reports/total/PIZZA       -> 400  "Categorias válidas: [GROCERIES, PHARMA, AUTO]"
 GET /transactions/reports/monthly/novembro  -> 400  "Use o formato AAAA-MM (ex.: 2026-11)"
